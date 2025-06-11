@@ -11,14 +11,11 @@ app = Flask(__name__)
 def index():
     return 'Bot is running'
 
-@app.route('/', methods=['POST'])
+@app.route('/', methods=['POST'])  # ← изменено
 def webhook():
-    try:
-        json_str = request.stream.read().decode("utf-8")
-        update = telebot.types.Update.de_json(json_str)
-        bot.process_new_updates([update])
-    except Exception as e:
-        print(f"Error processing update: {e}")
+    json_str = request.stream.read().decode("UTF-8")
+    update = Update.de_json(json_str)
+    bot.process_new_updates([update])
     return '', 200
 
 if __name__ == '__main__':
