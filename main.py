@@ -4,7 +4,7 @@ from telebot.types import Update
 from flask import Flask, request
 import openai
 
-# Настройки
+# Переменные окружения
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 ASSISTANT_ID = os.environ.get("ASSISTANT_ID")
@@ -15,18 +15,18 @@ openai.api_key = OPENAI_API_KEY
 
 app = Flask(__name__)
 
-# Установка webhook при запуске
-@app.before_first_request
+# Webhook установка (прямо при запуске)
 def set_webhook():
     bot.remove_webhook()
-    webhook_url = RENDER_EXTERNAL_URL
-    if webhook_url:
-        bot.set_webhook(url=webhook_url)
-        print(f"Setting webhook to: {webhook_url}")
+    if RENDER_EXTERNAL_URL:
+        bot.set_webhook(url=RENDER_EXTERNAL_URL)
+        print(f"Webhook set to: {RENDER_EXTERNAL_URL}")
     else:
-        print("Webhook URL not provided in environment variables.")
+        print("No RENDER_EXTERNAL_URL provided!")
 
-# Обработка входящих запросов от Telegram
+set_webhook()  # Вызов при старте
+
+# Обработка входящих сообщений от Telegram
 @app.route('/', methods=["POST"])
 def webhook():
     json_str = request.get_data().decode("utf-8")
@@ -34,7 +34,7 @@ def webhook():
     bot.process_new_updates([update])
     return "!", 200
 
-# Обработка текстовых сообщений
+# Ответы на текстовые сообщения
 @bot.message_handler(func=lambda message: True, content_types=['text'])
 def handle_message(message):
     user_input = message.text
@@ -55,12 +55,13 @@ def handle_message(message):
 
     except Exception as e:
         bot.reply_to(message, "Произошла ошибка при обращении к ИИ.")
-        print("Ошибка при обращении к OpenAI:", e)
+        print("OpenAI error:", e)
 
-# Проверка сервера
+# Проверка сервера (GET-запрос)
 @app.route('/', methods=["GET"])
 def index():
     return "Bot is running", 200
 
+# Запуск сервера
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
